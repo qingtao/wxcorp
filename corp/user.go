@@ -155,7 +155,7 @@ func sliceIntRemoveDuplicate(a []int) (b []int) {
 	return
 }
 
-// NewGetUserListURL 新建请求部门成员URL
+// NewGetUserListURL 新建请求部门成员URL, url主要用户测试，外部调用一般留空即可
 func NewGetUserListURL(url, typ, accessToken string, departmentID, fetchChild int, status []int) string {
 	if accessToken == "" || departmentID < 1 {
 		return ""
@@ -163,10 +163,8 @@ func NewGetUserListURL(url, typ, accessToken string, departmentID, fetchChild in
 	if url == "" {
 		if typ == "simple" {
 			url = defaultGetSimpleListURL
-		} else if typ == "detail" {
+		} else { // 如果未提供请求路径(不包含请求参数),默认请求用户详情
 			url = defaultGetUserListURL
-		} else {
-			return ""
 		}
 	}
 	url = fmt.Sprintf("%s?access_token=%s&department_id=%d", url, accessToken, departmentID)
@@ -212,7 +210,6 @@ func GetUserList(url, typ, accessToken string, departmenID, fetchChild int, stat
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Printf("----\n%s\n-----\n", b)
 	if err = json.Unmarshal(b, &res); err != nil {
 		return nil, err
 	}

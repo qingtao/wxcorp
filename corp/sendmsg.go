@@ -336,13 +336,13 @@ func SendMsg(url, accessToken string, msg *Msg) (err error) {
 		return
 	}
 	var errStr string
-	if len(res.InvalidUser) > 0 {
+	if len(res.InvalidUser) > 0 { // 失败的用户
 		errStr += "[InvalidUser]:" + res.InvalidUser
 	}
-	if len(res.InvalidParty) > 0 {
+	if len(res.InvalidParty) > 0 { // 失败的部门
 		errStr += "[InvalidParty]:" + res.InvalidParty
 	}
-	if len(res.InvalidTag) > 0 {
+	if len(res.InvalidTag) > 0 { // 失败的标签
 		errStr += "[InvalidTag]:" + res.InvalidTag
 	}
 	if errStr != "" {

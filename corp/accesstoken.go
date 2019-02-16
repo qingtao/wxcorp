@@ -43,7 +43,7 @@ func NewAccessTokenURL(url, corpid, secret string) string {
 	return fmt.Sprintf("%s?corpid=%s&corpsecret=%s", url, corpid, secret)
 }
 
-// GetAccessToken 获取access_token, 返回err ！= nil 如果出现错误
+// GetAccessToken 获取access_token, 返回err != nil 如果出现错误
 func GetAccessToken(url, corpid, secret string) (res *AccessTokenResponse, err error) {
 	if corpid == "" || secret == "" {
 		return nil, ErrCorpIDOrSecretIsEmpty
@@ -60,7 +60,6 @@ func GetAccessToken(url, corpid, secret string) (res *AccessTokenResponse, err e
 	if err != nil {
 		return nil, err
 	}
-	// b, _ := ioutil.ReadAll(resp.Body)
 
 	err = json.Unmarshal(b, &res)
 	if err != nil {
@@ -103,12 +102,10 @@ func GetEchoStr(corpid, token, encodingAESKey, s string) (echostr []byte, err er
 	if msgsign == "" || timestamp == "" || nonce == "" || encechostr == "" {
 		return nil, ErrEchoStrURLInvalid
 	}
-	// fmt.Println("1:", msgsign, "2:", timestamp, "3:", nonce, "4:", encechostr)
 	wxcpt := wxbizmsgcrypt.NewWXBizMsgCrypt(token, encodingAESKey, corpid, wxbizmsgcrypt.XmlType)
 	var cryptErr *wxbizmsgcrypt.CryptError
 	echostr, cryptErr = wxcpt.VerifyURL(msgsign, timestamp, nonce, encechostr)
 	if cryptErr != nil {
-		// fmt.Println(cryptErr)
 		return nil, errors.New(cryptErr.ErrMsg)
 	}
 	return

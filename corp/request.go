@@ -106,7 +106,7 @@ func NewNewsItemMsg(title, desc, picURL, url string) string {
 	return fmt.Sprintf("<item><Title><![CDATA[%s]]></Title><Description><![CDATA[%s]]></Description><PicUrl><![CDATA[%s]]></PicUrl><Url><![CDATA[%s]]></Url></item>", title, desc, picURL, url)
 }
 
-// NewNewsReplyMsg 新建图文消息
+// NewNewsReplyMsg 新建图文消息, items是每条图文消息的字符串, 即NewNewsItemMsg的结果
 func NewNewsReplyMsg(toUserID, fromCorpID string, items []string, creatTime int64) string {
 	var s string
 	for _, item := range items {

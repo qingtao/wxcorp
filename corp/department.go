@@ -18,7 +18,7 @@ type Department struct {
 	Name string `json:"name"`
 	// ParentID 父亲部门id,根部门为1
 	ParentID int `json:"parentid"`
-	// Order 在父部门中的次序值,order值小的排序靠前
+	// Order 在父部门中的次序值,order值大的排序靠前
 	Order int `json:"order"`
 }
 
@@ -26,7 +26,7 @@ type Department struct {
 type DepartmentResponse struct {
 	ErrCode int    `json:"errcode"`
 	ErrMsg  string `json:"errmsg"`
-	// Department 部门列表数据,以部门的order字段从小到大排列
+	// Department 部门列表数据,以部门的order字段从大到小排列
 	Department []Department `json:"department"`
 }
 

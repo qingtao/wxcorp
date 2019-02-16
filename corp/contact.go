@@ -1,9 +1,5 @@
 package corp
 
-/*
-	通讯录回调消息
-*/
-
 // ContactEvent 通讯录变更事件
 type ContactEvent struct {
 	ToUserName   string

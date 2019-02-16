@@ -59,8 +59,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// fmt.Printf("%s\n", code)
-	// fmt.Printf("%s\n", code.Data)
 	doc, ok := code.Data["document"]
 	if !ok || doc == nil {
 		fmt.Println("全局错误码文本为空")
@@ -77,19 +75,15 @@ func main() {
 		fmt.Println("2.全局错误文本格式错误")
 		os.Exit(1)
 	}
-	// text = strings.Replace(text, "\r\n", "\n", -1)
 	start := strings.Index(text, "-1")
 	end := strings.LastIndex(text, "排查方法")
 	text = text[start:end]
 
 	re := regexp.MustCompile(`(-?\d+)\s+([^\n\r]+)\s*`)
 	all := re.FindAllStringSubmatch(text, -1)
-	// fmt.Println(text)
 
 	var buf bytes.Buffer
-	buf.WriteString(`// Package errcode 错误代码错误信息对照表
-// 注意：此文件由代码生成工具生成，不要直接编辑
-package errcode
+	buf.WriteString(`package errcode
 
 import (
 	"github.com/pkg/errors"

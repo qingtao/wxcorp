@@ -112,7 +112,7 @@ func (a *Agent) GetAccessToken() (token string, err error) {
 
 // RefreshAccessToken 刷新访问令牌
 func (a *Agent) RefreshAccessToken() (token string, err error) {
-	println("--刷新访问令牌--", a.Token)
+	// println("--刷新访问令牌--", a.Token)
 	if !atomic.CompareAndSwapInt32(&a.refreshAccessToken, 0, 1) {
 		token = a.accessToken.accessToken
 		return
@@ -153,7 +153,7 @@ func (a *Agent) GetJsAPITicket(typ string) (ticket string, err error) {
 
 // RefreshJsAPITicket -
 func (a *Agent) RefreshJsAPITicket(typ string) (ticket string, err error) {
-	println("--刷新jsapi_ticket--", a.Token)
+	// println("--刷新jsapi_ticket--", a.Token)
 	flag := &a.refreshJsAPITicket
 	if typ == "agent_config" {
 		flag = &a.refreshAgentJsAPITicket
@@ -207,7 +207,6 @@ func (a *Agent) SetIPList() error {
 	if err != nil {
 		return err
 	}
-	// fmt.Printf("%+v\n", ipList.IPList)
 	a.Lock()
 	defer a.Unlock()
 	for _, ip := range ipList.IPList {
@@ -224,7 +223,6 @@ func (a *Agent) IsMatch(remoteAddr string) bool {
 	}
 	index := strings.LastIndex(remoteAddr, ".")
 	ip := remoteAddr[:index] + ".*"
-	// fmt.Println(ip)
 	if _, ok := a.ipList[ip]; ok {
 		return true
 	}
