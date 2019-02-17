@@ -7,6 +7,29 @@ import (
 	"github.com/qingtao/wxcorp/corp/errcode"
 )
 
+// GetUser 获取成员信息
+func (a *Agent) GetUser(userid string) (user *corp.User, err error) {
+	accessToken, err := a.GetAccessToken()
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < retryTimes; i++ {
+		res, err := corp.GetUser("", accessToken, userid)
+		if err == nil {
+			user = &res.User
+			break
+		}
+		if err == errcode.ErrInvalidAccessToken {
+			accessToken, err = a.RefreshAccessToken()
+			if err != nil {
+				return nil, err
+			}
+		}
+		time.Sleep(retryInterval)
+	}
+	return
+}
+
 // GetDepartment 获取部门列表
 func (a *Agent) GetDepartment(departmentID int) (dept []corp.Department, err error) {
 	accessToken, err := a.GetAccessToken()
