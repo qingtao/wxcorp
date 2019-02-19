@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// defaultGetJsAPITicketURL 请求jsapi_ticket的url(不包含参数)
+	// defaultGetJsAPITicketURL 请求jsapi_ticket的URL(不包含参数)
 	defaultGetJsAPITicketURL = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket"
 	// defaultGetAgentJsAPITicketURL 请求应用的jsapi_ticket(不包含参数)
 	defaultGetAgentJsAPITicketURL = "https://qyapi.weixin.qq.com/cgi-bin/ticket/get"

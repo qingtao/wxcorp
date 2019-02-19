@@ -8,7 +8,7 @@ import (
 	"github.com/qingtao/wxcorp/corp/errcode"
 )
 
-// defaultGetCallBackIPURL 默认的获取企业微信服务器IP的url(不包含参数)
+// defaultGetCallBackIPURL 默认的获取企业微信服务器IP的URL(不包含参数)
 const defaultGetCallBackIPURL = "https://qyapi.weixin.qq.com/cgi-bin/getcallbackip"
 
 // IPListResponse 响应
@@ -27,7 +27,7 @@ func (ipList *IPListResponse) Validate() error {
 	return errcode.Error(ipList.ErrCode)
 }
 
-// NewIPListURL IP地址段的请求URL
+// NewIPListURL IP地址段的请求的URL
 func NewIPListURL(url, accessToken string) (s string) {
 	if accessToken == "" {
 		return

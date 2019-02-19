@@ -1,5 +1,7 @@
 package errcode
 
+// 注意：此文件由代码生成工具生成，请勿直接编辑
+
 import (
 	"github.com/pkg/errors"
 )

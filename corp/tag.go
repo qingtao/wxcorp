@@ -66,7 +66,7 @@ func (res *MemberOfTagReponse) Validate() error {
 	return errcode.Error(res.ErrCode)
 }
 
-// NewGetTagListURL 新建获取标签列表URL
+// NewGetTagListURL 新建获取标签列表的URL
 func NewGetTagListURL(url, accessToken string) string {
 	if accessToken == "" {
 		return ""
@@ -98,7 +98,7 @@ func GetTagList(url, accessToken string) (res *TagListResponse, err error) {
 	return
 }
 
-// NewGetUserOfTagURL 新建获取标签用户URL
+// NewGetUserOfTagURL 新建获取标签用户的URL
 func NewGetUserOfTagURL(url, accessToken string, tagid int) string {
 	if accessToken == "" {
 		return ""

@@ -14,7 +14,7 @@ const (
 	defaultOAuth2GetUserInfoURL = "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo"
 )
 
-// NewOAuth2RedirectURL 新建网页授权跳转链接
+// NewOAuth2RedirectURL 新建网页授权跳转的URL
 func NewOAuth2RedirectURL(wxurl, appid, returnTo, targetURI, state string) string {
 	if wxurl == "" {
 		wxurl = defaultOAuth2AuthorizeURL
@@ -28,7 +28,7 @@ func NewOAuth2RedirectURL(wxurl, appid, returnTo, targetURI, state string) strin
 	return fmt.Sprintf("%s?appid=%s&redirect_uri=%s&response_type=code&scope=snsapi_base&state=%s#wechat_redirect", wxurl, appid, targetURI, state)
 }
 
-// NewGetUserInfoURL 新建请求用户身份(userid)链接
+// NewGetUserInfoURL 新建请求用户信息(userid)的URL
 func NewGetUserInfoURL(wxurl, accessToken, code string) string {
 	if wxurl == "" {
 		wxurl = defaultOAuth2GetUserInfoURL
@@ -52,7 +52,7 @@ func (res *UserInfoResponse) Validate() error {
 	return errcode.Error(res.ErrCode)
 }
 
-// GetUserInfoWithCode 获取用户基本信息
+// GetUserInfoWithCode 获取用户基本信息, code为用户的授权码
 func GetUserInfoWithCode(url, accessToken, code string) (res *UserInfoResponse, err error) {
 	if accessToken == "" {
 		return nil, errcode.ErrInvalidAccessToken

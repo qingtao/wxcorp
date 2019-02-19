@@ -86,7 +86,8 @@ func (token *AccessTokenResponse) Validate() error {
 	return errcode.Error(token.ErrCode)
 }
 
-// GetEchoStr 获取echostr,请求地址:
+// GetEchoStr 获取echostr
+//	请求地址:
 //	http://api.3dept.com/?msg_signature=ASDFQWEXZCVAQFASDFASDFSS&timestamp=13500001234&nonce=123412323&echostr=ENCRYPT_STR
 func GetEchoStr(corpid, token, encodingAESKey, s string) (echostr []byte, err error) {
 	// 解析url

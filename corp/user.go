@@ -155,7 +155,7 @@ func sliceIntRemoveDuplicate(a []int) (b []int) {
 	return
 }
 
-// NewGetUserListURL 新建请求部门成员URL, url主要用户测试，外部调用一般留空即可
+// NewGetUserListURL 新建请求部门成员的URL, url主要用户测试，外部调用一般留空即可
 func NewGetUserListURL(url, typ, accessToken string, departmentID, fetchChild int, status []int) string {
 	if accessToken == "" || departmentID < 1 {
 		return ""
@@ -196,7 +196,7 @@ func (res *UserListResponse) Validate() error {
 	return errcode.Error(res.ErrCode)
 }
 
-// GetUserList 获取部门用户, 如果typ="simple"查询部门成员, 如果typ="detail"查询部门成员详情
+// GetUserList 获取部门用户, 如果typ="simple"查询部门成员, 如果typ!="simple"查询部门成员详情
 func GetUserList(url, typ, accessToken string, departmenID, fetchChild int, status []int) (res *UserListResponse, err error) {
 	url = NewGetUserListURL(url, typ, accessToken, departmenID, fetchChild, status)
 	resp, err := httpClient.Get(url)
