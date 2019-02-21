@@ -48,15 +48,16 @@ type Msg struct {
 
 // Validate 验证消息
 func (msg *Msg) Validate() error {
+	if msg == nil {
+		return errors.New("消息为空")
+	}
 	if msg.ToUser == "" && msg.ToParty == "" && msg.ToTag == "" {
 		return errors.New("touser/toparty/totag不能同时为空")
 	}
 	if msg.AgentID == 0 {
 		return errors.New("应用代理agentid不可为空")
 	}
-	if msg == nil {
-		return errors.New("消息为空")
-	}
+
 	switch msg.MsgType {
 	case "text":
 		return msg.Text.Validate()
@@ -152,7 +153,7 @@ func (msg *TextCardMsg) Validate() error {
 
 // NewsMsg 图文消息
 type NewsMsg struct {
-	Acticles []NewsItem `json:"acticles"`
+	Articles []NewsItem `json:"articles"`
 }
 
 // Validate 验证图文消息
@@ -160,11 +161,11 @@ func (msg *NewsMsg) Validate() error {
 	if msg == nil {
 		return errors.New("图文消息为空")
 	}
-	if len(msg.Acticles) < 1 || len(msg.Acticles) > 8 {
+	if len(msg.Articles) < 1 || len(msg.Articles) > 8 {
 		return errors.New("图文消息支持1到8条图文")
 	}
 	var err error
-	for _, article := range msg.Acticles {
+	for _, article := range msg.Articles {
 		if err = article.Validate(); err != nil {
 			return err
 		}
@@ -195,7 +196,7 @@ func (item NewsItem) Validate() error {
 
 // MpNewsMsg 图文消息
 type MpNewsMsg struct {
-	Acticles []MpNewsItem `json:"acticles"`
+	Articles []MpNewsItem `json:"articles"`
 }
 
 // Validate 验证mpnews
@@ -203,11 +204,11 @@ func (msg *MpNewsMsg) Validate() error {
 	if msg == nil {
 		return errors.New("图文消息为空")
 	}
-	if len(msg.Acticles) < 1 || len(msg.Acticles) > 8 {
+	if len(msg.Articles) < 1 || len(msg.Articles) > 8 {
 		return errors.New("图文消息支持1到8条图文")
 	}
 	var err error
-	for _, article := range msg.Acticles {
+	for _, article := range msg.Articles {
 		if err = article.Validate(); err != nil {
 			return err
 		}
@@ -268,7 +269,7 @@ type MarkdownMsg struct {
 // Validate 验证markdown消息
 func (msg *MarkdownMsg) Validate() error {
 	if msg == nil {
-		return errors.New("消息为空")
+		return errors.New("markdown消息为空")
 	}
 	if msg.Content == "" {
 		return errors.New("markdown消息内容为空")

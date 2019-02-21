@@ -28,8 +28,8 @@ func TestError(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "40001",
-			args:    args{i: 40001},
+			name:    "40014",
+			args:    args{i: 40014},
 			wantErr: true,
 		},
 	}
