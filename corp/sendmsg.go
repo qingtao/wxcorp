@@ -288,7 +288,7 @@ type SendMsgResponse struct {
 	ErrMsg       string `json:"errmsg,omitempty"`
 	InvalidUser  string `json:"invaliduser,omitempty"`
 	InvalidParty string `json:"invalidparty,omitempty"`
-	InvalidTag   string `json:"ivalidtag,omitempty"`
+	InvalidTag   string `json:"invalidtag,omitempty"`
 }
 
 // NewSendMsgURL 新建发送消息URL
@@ -312,14 +312,14 @@ func SendMsg(url, accessToken string, msg *Msg) (err error) {
 	}
 	b, err := json.Marshal(msg)
 	if err != nil {
-		return nil
+		return
 	}
 	buf := bytes.NewBuffer(b)
 	defer buf.Reset()
 	url = NewSendMsgURL(url, accessToken)
 	resp, err := httpClient.Post(url, mimeApplicationJSONCharsetUTF8, buf)
 	if err != nil {
-		return err
+		return
 	}
 	if resp.Body != nil {
 		defer resp.Body.Close()
@@ -333,21 +333,22 @@ func SendMsg(url, accessToken string, msg *Msg) (err error) {
 		return
 	}
 
+	var errMap = make(map[string]string)
 	if err = errcode.Error(res.ErrCode); err != nil {
-		return
+		errMap["error"] = err.Error()
 	}
-	var errStr string
-	if len(res.InvalidUser) > 0 { // 失败的用户
-		errStr += "[InvalidUser]:" + res.InvalidUser
+	if res.InvalidUser != "" { // 失败的用户
+		errMap["InvalidUser"] = res.InvalidUser
 	}
-	if len(res.InvalidParty) > 0 { // 失败的部门
-		errStr += "[InvalidParty]:" + res.InvalidParty
+	if res.InvalidParty != "" { // 失败的部门
+		errMap["InvalidParty"] = res.InvalidParty
 	}
-	if len(res.InvalidTag) > 0 { // 失败的标签
-		errStr += "[InvalidTag]:" + res.InvalidTag
+	if res.InvalidTag != "" { // 失败的标签
+		errMap["InvalidTag"] = res.InvalidTag
 	}
-	if errStr != "" {
-		return errors.New(errStr)
+	if len(errMap) > 0 {
+		b, _ := json.Marshal(errMap)
+		err = errors.New(string(b))
 	}
-	return nil
+	return
 }

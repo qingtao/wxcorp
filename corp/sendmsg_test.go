@@ -2,6 +2,9 @@ package corp
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 )
@@ -204,7 +207,7 @@ func TestTextMsg_Validate(t *testing.T) {
 			msg: &TextMsg{
 				Content: "abc",
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -578,6 +581,131 @@ func TestMarkdownMsg_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.msg.Validate(); (err != nil) != tt.wantErr {
 				t.Errorf("MarkdownMsg.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSendMsg(t *testing.T) {
+	s := `{
+   "touser" : "UserID1|UserID2|UserID3",
+   "toparty" : "PartyID1|PartyID2",
+   "totag" : "TagID1 | TagID2",
+   "msgtype" : "text",
+   "agentid" : 1,
+   "text" : {
+       "content" : "你的快递已到，请携带工卡前往邮件中心领取。\n出发前可查看<a href=\"http://work.weixin.qq.com\">邮件中心视频实况</a>，聪明避开排队。"
+   },
+   "safe":0
+}`
+	var msg Msg
+	json.Unmarshal([]byte(s), &msg)
+
+	var resStr = `{
+   "errcode" : 0,
+   "errmsg" : "ok",
+   "invaliduser" : "",
+   "invalidparty" : "",
+   "invalidtag":""
+ }`
+
+	var resErr = `{
+   "errcode" : 0,
+   "errmsg" : "ok",
+   "invaliduser" : "userid1|userid2",
+   "invalidparty" : "partyid1|partyid2",
+   "invalidtag":"tagid1|tagid2"
+ }`
+
+	ht := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res := resStr
+		r.ParseForm()
+		accesstoken := r.FormValue("access_token")
+		switch accesstoken {
+		case "wantOk":
+		case "wantJSONErr":
+			res = `{"errcode:0,"errmsg":"ok"}`
+		case "wantErr":
+			res = resErr
+		default:
+			res = `{"errcode":1,"errmsg":"未知错误"}`
+		}
+		fmt.Fprint(w, res)
+	}))
+
+	type args struct {
+		url         string
+		accessToken string
+		msg         *Msg
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+
+		{
+			name: "1",
+			args: args{
+				accessToken: "",
+			},
+			wantErr: true,
+		},
+		{
+			name: "wantOk",
+			args: args{
+				url:         ht.URL,
+				accessToken: "wantOk",
+				msg:         &msg,
+			},
+			wantErr: false,
+		},
+		{
+			name: "wantJSONErr",
+			args: args{
+				url:         ht.URL,
+				accessToken: "wantJSONErr",
+				msg:         &msg,
+			},
+			wantErr: true,
+		},
+		{
+			name: "wantErr",
+			args: args{
+				url:         ht.URL,
+				accessToken: "wantErr",
+				msg:         &msg,
+			},
+			wantErr: true,
+		},
+		{
+			name: "wantErr2",
+			args: args{
+				url:         ht.URL,
+				accessToken: "wantErr2",
+				msg:         &msg,
+			},
+			wantErr: true,
+		},
+		{
+			name: "networkErr",
+			args: args{
+				url:         `http://127.0.0.1:8080`,
+				accessToken: "a",
+				msg:         &msg,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := SendMsg(tt.args.url, tt.args.accessToken, tt.args.msg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SendMsg() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err != nil {
+				t.Log(err.Error())
 			}
 		})
 	}

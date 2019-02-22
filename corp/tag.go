@@ -79,6 +79,9 @@ func NewGetTagListURL(url, accessToken string) string {
 
 // GetTagList 获取标签列表
 func GetTagList(url, accessToken string) (res *TagListResponse, err error) {
+	if accessToken == "" {
+		return nil, errcode.ErrInvalidAccessToken
+	}
 	url = NewGetTagListURL(url, accessToken)
 	resp, err := httpClient.Get(url)
 	if err != nil {
@@ -111,6 +114,9 @@ func NewGetUserOfTagURL(url, accessToken string, tagid int) string {
 
 // GetMemberOfTag 获取标签成员
 func GetMemberOfTag(url, accessToken string, tagid int) (member *MemberOfTagReponse, err error) {
+	if accessToken == "" {
+		return nil, errcode.ErrInvalidAccessToken
+	}
 	url = NewGetUserOfTagURL(url, accessToken, tagid)
 	resp, err := httpClient.Get(url)
 	if err != nil {

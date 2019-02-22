@@ -121,6 +121,9 @@ func NewGetUserURL(url, accessToken, userid string) string {
 
 // GetUser 获取user信息
 func GetUser(url, accessToken string, userid string) (user *UserResponse, err error) {
+	if accessToken == "" {
+		return nil, errcode.ErrInvalidAccessToken
+	}
 	url = NewGetUserURL(url, accessToken, userid)
 	resp, err := httpClient.Get(url)
 	if err != nil {
@@ -198,6 +201,9 @@ func (res *UserListResponse) Validate() error {
 
 // GetUserList 获取部门用户, 如果typ="simple"查询部门成员, 如果typ!="simple"查询部门成员详情
 func GetUserList(url, typ, accessToken string, departmenID, fetchChild int, status []int) (res *UserListResponse, err error) {
+	if accessToken == "" {
+		return nil, errcode.ErrInvalidAccessToken
+	}
 	url = NewGetUserListURL(url, typ, accessToken, departmenID, fetchChild, status)
 	resp, err := httpClient.Get(url)
 	if err != nil {
