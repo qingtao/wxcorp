@@ -210,9 +210,26 @@ func TestGetUser(t *testing.T) {
 		{
 			name: "3",
 			args: args{
-				url:         "",
-				accessToken: "",
+				accessToken: "a",
 				userid:      "abc",
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "4",
+			args: args{
+				userid: "abc",
+			},
+			wantUser: nil,
+			wantErr:  true,
+		},
+		{
+			name: "5",
+			args: args{
+				url:         "http://127.0.0.1:8081",
+				accessToken: "a",
+				userid:      "a",
 			},
 			wantUser: nil,
 			wantErr:  true,

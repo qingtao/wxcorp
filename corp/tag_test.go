@@ -100,11 +100,15 @@ func TestNewGetTagListURL(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "2",
-			args: args{
-				url:         "",
-				accessToken: "",
-			},
+			args: args{},
 			want: "",
+		},
+		{
+			name: "2",
+			args: args{
+				accessToken: "a",
+			},
+			want: "https://qyapi.weixin.qq.com/cgi-bin/tag/list?access_token=a",
 		},
 	}
 	for _, tt := range tests {
@@ -131,11 +135,17 @@ func TestNewGetUserOfTagURL(t *testing.T) {
 		{
 			name: "1",
 			args: args{
-				url:         "",
-				accessToken: "",
-				tagid:       1,
+				tagid: 1,
 			},
 			want: "",
+		},
+		{
+			name: "1",
+			args: args{
+				accessToken: "a",
+				tagid:       1,
+			},
+			want: "https://qyapi.weixin.qq.com/cgi-bin/tag/get?access_token=a&tagid=1",
 		},
 	}
 	for _, tt := range tests {
