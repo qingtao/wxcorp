@@ -162,3 +162,191 @@ func TestGetDepartment(t *testing.T) {
 		})
 	}
 }
+
+func TestNewCreateDepartmentURL(t *testing.T) {
+	type args struct {
+		url         string
+		accessToken string
+	}
+	var (
+		accessToken   = "a"
+		wantCreateURL = `https://qyapi.weixin.qq.com/cgi-bin/department/create?access_token=a`
+		wantUpdateURL = `https://qyapi.weixin.qq.com/cgi-bin/department/update?access_token=a`
+		wantDeleteURL = `https://qyapi.weixin.qq.com/cgi-bin/department/delete?access_token=a`
+	)
+
+	t.Run("create", func(t *testing.T) {
+		got := NewCreateDepartmentURL("", "")
+		if got != "" {
+			t.Errorf("NewCreateDepartmentURL() = %v, want %v", got, "")
+		}
+		got = NewCreateDepartmentURL("", accessToken)
+		if got != wantCreateURL {
+			t.Errorf("NewCreateDepartmentURL() = %v, want %v", got, wantCreateURL)
+		}
+	})
+	t.Run("update", func(t *testing.T) {
+		got := NewUpdateDepartmentURL("", "")
+		if got != "" {
+			t.Errorf("NewUpdateDepartmentURL() = %v, want %v", got, "")
+		}
+		got = NewUpdateDepartmentURL("", accessToken)
+		if got != wantUpdateURL {
+			t.Errorf("NewUpdateDepartmentURL() = %v, want %v", got, wantUpdateURL)
+		}
+	})
+	t.Run("delete", func(t *testing.T) {
+		got := NewDeleteDepartmentURL("", "")
+		if got != "" {
+			t.Errorf("NewDeleteDepartmentURL() = %v, want %v", got, "")
+		}
+		got = NewDeleteDepartmentURL("", accessToken)
+		if got != wantDeleteURL {
+			t.Errorf("NewDeleteDepartmentURL() = %v, want %v", got, wantDeleteURL)
+		}
+	})
+}
+
+func TestDeleteDepartment(t *testing.T) {
+	var s = `{"errcode":0,"errmsg":"deleted"}`
+	ht := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+		accesstoken := r.FormValue("access_token")
+		switch accesstoken {
+		case "ok":
+			fmt.Fprint(w, s)
+		case "json_error":
+			fmt.Fprint(w, `"errcode":0,"errmsg":"deleted"}`)
+		default:
+			fmt.Fprint(w, `{"errcode":1,"errmsg":"未知错误"}`)
+		}
+	}))
+	type args struct {
+		url         string
+		accessToken string
+		id          int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "1",
+			args: args{
+				url:         ht.URL,
+				accessToken: "ok",
+				id:          2,
+			},
+		},
+		{
+			name: "2",
+			args: args{
+				url:         ht.URL,
+				accessToken: "json_error",
+				id:          2,
+			},
+			wantErr: true,
+		},
+		{
+			name: "3",
+			args: args{
+				url: ht.URL,
+				id:  2,
+			},
+			wantErr: true,
+		},
+		{
+			name: "4",
+			args: args{
+				url:         "http://127.0.0.1:8082",
+				accessToken: "a",
+				id:          2,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := DeleteDepartment(tt.args.url, tt.args.accessToken, tt.args.id)
+			if err != nil {
+				if tt.wantErr {
+					t.Log(err.Error())
+				} else {
+					t.Errorf("DeleteDepartment() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			}
+		})
+	}
+}
+
+func TestChangeDepartment(t *testing.T) {
+	var s = `{"name":"广州研发中心","parentid":1,"order":1,"id":2}`
+	var dept Department
+	json.Unmarshal([]byte(s), &dept)
+	var res = `{"errcode":0,"errmsg":"created","id":2}`
+	ht := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var ss string
+		r.ParseForm()
+		accesstoken := r.FormValue("access_token")
+		switch accesstoken {
+		case "ok":
+			ss = res
+		case "json_error":
+			ss = `{"name":"广州研发中心",parentid":1,"order":1,"id":2}`
+		default:
+			ss = `{"errcode":1,"errmsg":"未知错误"}`
+		}
+		fmt.Fprint(w, ss)
+	}))
+	type args struct {
+		url         string
+		accessToken string
+		dept        *Department
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name:    "1",
+			args:    args{url: ht.URL, accessToken: "ok", dept: &dept},
+			wantErr: false,
+		},
+		{
+			name:    "2",
+			args:    args{url: ht.URL, accessToken: "json_error", dept: &dept},
+			wantErr: true,
+		},
+		{
+			name:    "3",
+			args:    args{url: "http://127.0.0.1:8088", accessToken: "a", dept: &dept},
+			wantErr: true,
+		},
+		{
+			name:    "4",
+			args:    args{url: "", accessToken: "", dept: &dept},
+			wantErr: true,
+		},
+		{
+			name:    "5",
+			args:    args{url: "", accessToken: "ok", dept: &Department{Name: "广州研发中心", ParentID: 0, Order: 1000000, ID: 2}},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("create_"+tt.name, func(t *testing.T) {
+			if err := CreateDepartment(tt.args.url, tt.args.accessToken, tt.args.dept); (err != nil) != tt.wantErr {
+				t.Errorf("CreateDepartment() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+		t.Run("update_"+tt.name, func(t *testing.T) {
+			if err := UpdateDepartment(tt.args.url, tt.args.accessToken, tt.args.dept); (err != nil) != tt.wantErr {
+				t.Errorf("CreateDepartment() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
