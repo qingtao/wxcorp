@@ -4,14 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/pkg/errors"
 
 	"github.com/qingtao/wxcorp/corp/errcode"
 )
 
 const (
-	defaultGetUserURL       = "https://qyapi.weixin.qq.com/cgi-bin/user/get"
-	defaultGetSimpleListURL = "https://qyapi.weixin.qq.com/cgi-bin/user/simplelist"
-	defaultGetUserListURL   = "https://qyapi.weixin.qq.com/cgi-bin/user/list"
+	defaultGetUserURL         = "https://qyapi.weixin.qq.com/cgi-bin/user/get"
+	defaultGetSimpleListURL   = "https://qyapi.weixin.qq.com/cgi-bin/user/simplelist"
+	defaultGetUserListURL     = "https://qyapi.weixin.qq.com/cgi-bin/user/list"
+	defaultCreateUserURL      = "https://qyapi.weixin.qq.com/cgi-bin/user/create"
+	defaultUpdateUserURL      = "https://qyapi.weixin.qq.com/cgi-bin/user/update"
+	defaultDeleteUserURL      = "https://qyapi.weixin.qq.com/cgi-bin/user/delete"
+	defaultBatchDeleteUserURL = "https://qyapi.weixin.qq.com/cgi-bin/user/batchdelete"
 )
 
 // UserResponse 请求用户的响应结构
@@ -39,15 +49,52 @@ type ExtAttr struct {
 	Miniprogram ExtMiniprogram `json:"miniprogram,omitempty"`
 }
 
+// Validate 验证扩展属性
+func (a ExtAttr) Validate() error {
+	switch a.Type {
+	case 0:
+		return a.Text.Validate()
+	case 1:
+		return a.Web.Validate()
+	case 2:
+		return a.Miniprogram.Validate()
+	default:
+		return errors.New("不支持的扩展属性类型")
+	}
+}
+
 // ExtText 扩展属性文本
 type ExtText struct {
 	Value string `json:"value,omitempty" xml:",omitempty"`
+}
+
+// Validate 验证文本属性
+func (a ExtText) Validate() error {
+	if a.Value != "" && utf8.RuneCountInString(a.Value) > 12 {
+		return errors.New("文本属性的内容超过12个UTF8字符")
+	}
+	return nil
 }
 
 // ExtWeb 扩展属性的网页格式
 type ExtWeb struct {
 	Title string `json:"title,omitempty" xml:",omitempty"`
 	URL   string `json:"url,omitempty" xml:",omitempty"`
+}
+
+// Validate 网页类型的属性校验
+func (a ExtWeb) Validate() error {
+	switch {
+	case a.Title == "" && a.URL == "":
+		return nil
+	case a.Title != "" && a.URL != "":
+		if utf8.RuneCountInString(a.Title) > 12 {
+			return errors.New("网页的展示标题长度限制12个UTF8字符")
+		}
+	default:
+		return errors.New("url和title字段要么同时为空表示清除该属性，要么同时不为空")
+	}
+	return nil
 }
 
 // ExtMiniprogram 扩展属性的小程序格式
@@ -57,9 +104,34 @@ type ExtMiniprogram struct {
 	PagePath string `json:"pagepath,omitempty" xml:",omitempty"`
 }
 
+// Validate 小程序类型的属性校验
+func (a ExtMiniprogram) Validate() error {
+	switch {
+	case a.Title == "" && a.AppID == "":
+		return nil
+	case a.Title != "" && a.AppID != "":
+		if utf8.RuneCountInString(a.Title) > 12 {
+			return errors.New("小程序的展示标题,长度限制12个UTF8字符")
+		}
+	default:
+		return errors.New("appid和title字段要么同时为空表示清除改属性，要么同时不为空")
+	}
+	return nil
+}
+
 // ExtAttrs 扩展字段
 type ExtAttrs struct {
 	Attrs []ExtAttr `json:"attrs,omitempty" xml:",omitempty"`
+}
+
+// Validate 验证扩展字段
+func (a *ExtAttrs) Validate() (err error) {
+	for _, attr := range a.Attrs {
+		if err = attr.Validate(); err != nil {
+			return
+		}
+	}
+	return nil
 }
 
 // User 用户信息
@@ -71,6 +143,8 @@ type User struct {
 	Name string `json:"name"`
 	// Department 成员所属部门id列表,不超过20个
 	Department []int `json:"department"`
+	// Order 成员在部门中的排序
+	Order []int `json:"order"`
 	// IsLeaderInDept 是否是部门领导，与Department字段一一对应
 	IsLeaderInDept []int `json:"is_leader_in_dept,omitempty"`
 	// Position	职务信息,0-128个字符
@@ -79,6 +153,8 @@ type User struct {
 	Mobile string `json:"mobile,omitempty"`
 	// Gender 性别 0表示未定义，1表示男性，2表示女性
 	Gender string `json:"gender,omitempty"`
+	// Enable 是否启用, 1:启用 0:禁用
+	Enable int `json:"enable"`
 	// Email 邮箱 第三方仅通讯录套件可获取,6-64个字符
 	Email string `json:"email,omitempty"`
 	// Avatar 头像url 注：如果要获取小图将url最后的"/0"改成"/64"即可
@@ -101,11 +177,80 @@ type User struct {
 	ExternalProfile *ExternalProfile `json:"external_profile,omitempty" xml:",omitempty"`
 }
 
+// Validate 验证用户字段
+func (a User) Validate() error {
+	if a.Enable != 0 && a.Enable != 1 {
+		return errors.New("启用/禁用成员: 1表示启用成员，0表示禁用成员")
+	}
+	if nameLen := utf8.RuneCountInString(a.Name); nameLen < 1 || nameLen > 64 {
+		return errors.New("成员名称长度为1~64个utf8字符")
+	}
+	deptLen := len(a.Department)
+	if deptLen > 20 {
+		return errors.New("成员所属部门id列表要求不超过20个")
+	}
+	if deptLen != len(a.IsLeaderInDept) {
+		return errors.New("成员上级字段个数必须和department一致")
+	}
+	if deptLen != len(a.Order) {
+		return errors.New("成员排序值字段个数必须和department一致")
+	}
+	for _, order := range a.Order {
+		if order < 0 || order > math.MaxUint32 {
+			return errors.New("部门内的排序值有效范围为[0,2^32)")
+		}
+	}
+	if a.Gender != "0" && a.Gender != "1" && a.Gender != "2" {
+		return errors.New("成员性别必须是1:男,2:女")
+	}
+	if a.Position != "" && len(a.Position) > 128 {
+		return errors.New("成员职务信息长度为0~128个字符")
+	}
+	if a.Email != "" {
+		if len(a.Email) > 64 {
+			return errors.New("成员的邮箱地址长度最大为64")
+		}
+		// 找到@符号的位置
+		index := strings.IndexByte(a.Email, '@')
+		if index < 1 || index == len(a.Email)-1 {
+			return errors.New("成员的email必须是有效的邮箱地址")
+		}
+	}
+	if a.ExternalPosition != "" {
+		if utf8.RuneCountInString(a.ExternalPosition) > 12 {
+			return errors.New("成员的外部职务必须是最大12个中文字符")
+		}
+		for _, r := range a.ExternalPosition {
+			if !unicode.Is(unicode.Han, r) {
+				return errors.New("成员的外部职务必须是最大12个中文字符")
+			}
+		}
+	}
+	err := a.ExtAttr.Validate()
+	if err != nil {
+		return err
+	}
+	err = a.ExternalProfile.Validate()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ExternalProfile -
 type ExternalProfile struct {
-	//
 	ExternalCoprName string    `json:"external_corp_name,omitempty" xml:",omitempty"`
 	ExternalAttr     []ExtAttr `json:"external_attr,omitempty" xml:",omitempty"`
+}
+
+// Validate 验证扩展属性
+func (a ExternalProfile) Validate() (err error) {
+	for _, attr := range a.ExternalAttr {
+		if err = attr.Validate(); err != nil {
+			return
+		}
+	}
+	return nil
 }
 
 // NewGetUserURL 新建获取成员的URL
