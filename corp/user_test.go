@@ -213,8 +213,11 @@ func TestGetUser(t *testing.T) {
 				accessToken: "a",
 				userid:      "abc",
 			},
-			wantUser: nil,
-			wantErr:  true,
+			wantUser: &UserResponse{
+				ErrCode: 40014,
+				ErrMsg:  "invalid access_token",
+			},
+			wantErr: true,
 		},
 		{
 			name: "4",
