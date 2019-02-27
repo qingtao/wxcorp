@@ -111,6 +111,7 @@ func NewGetDepartmentListURL(url, accessToken string, id int) string {
 }
 
 // GetDepartment 获取部门信息
+// 未测试
 func GetDepartment(url, accessToken string, id int) (dept *DepartmentResponse, err error) {
 	if accessToken == "" {
 		return nil, errcode.ErrInvalidAccessToken
@@ -157,6 +158,7 @@ func NewUpdateDepartmentURL(url, accessToken string) string {
 }
 
 // postDepartment 提交部门, action指定为"create"时按照创建部门检查名称是否为空
+// 未测试
 func postDepartment(url, accessToken, action string, dept *Department) (err error) {
 	if accessToken == "" {
 		return errcode.ErrInvalidAccessToken
@@ -202,11 +204,13 @@ func postDepartment(url, accessToken, action string, dept *Department) (err erro
 }
 
 // CreateDepartment 创建部门
+// 未测试
 func CreateDepartment(url, accessToken string, dept *Department) error {
 	return postDepartment(url, accessToken, "create", dept)
 }
 
 // UpdateDepartment 更新部门
+// 未测试
 func UpdateDepartment(url, accessToken string, dept *Department) error {
 	return postDepartment(url, accessToken, "update", dept)
 }
@@ -223,6 +227,7 @@ func NewDeleteDepartmentURL(url, accessToken string) string {
 }
 
 // DeleteDepartment 删除部门,不能删除根部门；不能删除含有子部门、成员的部门, 所以要先确定id是否可以删除
+// 未测试
 func DeleteDepartment(url, accessToken string, id int) error {
 	if accessToken == "" {
 		return errcode.ErrInvalidAccessToken

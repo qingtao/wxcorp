@@ -1,6 +1,7 @@
 package corp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -22,6 +23,8 @@ const (
 	defaultUpdateUserURL      = "https://qyapi.weixin.qq.com/cgi-bin/user/update"
 	defaultDeleteUserURL      = "https://qyapi.weixin.qq.com/cgi-bin/user/delete"
 	defaultBatchDeleteUserURL = "https://qyapi.weixin.qq.com/cgi-bin/user/batchdelete"
+
+	maxBatchDeleteUserCount = 200 // 批量删除时，一次请求最多可以删除200个用户
 )
 
 // UserResponse 请求用户的响应结构
@@ -375,5 +378,154 @@ func GetUserList(url, typ, accessToken string, departmenID, fetchChild int, stat
 	}
 	err = res.Validate()
 	return
+}
 
+// NewCreateUserURL 新建创建用户的URL
+func NewCreateUserURL(url, accessToken string) string {
+	if accessToken == "" {
+		return ""
+	}
+	if url == "" {
+		url = defaultCreateUserURL
+	}
+	return fmt.Sprintf("%s?access_token=%s", url, accessToken)
+}
+
+//NewUpdateUserURL 新建更新用户的URL
+func NewUpdateUserURL(url, accessToken string) string {
+	if accessToken == "" {
+		return ""
+	}
+	if url == "" {
+		url = defaultUpdateUserURL
+	}
+	return fmt.Sprintf("%s?access_token=%s", url, accessToken)
+}
+
+// NewDeleteUserURL 新建删除用户的URL
+func NewDeleteUserURL(url, accessToken, userid string) string {
+	if accessToken == "" {
+		return ""
+	}
+	if url == "" {
+		url = defaultDeleteUserURL
+	}
+	return fmt.Sprintf("%s?access_token=%s&userid=%s", url, accessToken, userid)
+}
+
+// NewBatchDeleteUserURL 新建批量删除用户的URL
+func NewBatchDeleteUserURL(url, accessToken string) string {
+	if accessToken == "" {
+		return ""
+	}
+	if url == "" {
+		url = defaultBatchDeleteUserURL
+	}
+	return fmt.Sprintf("%s?access_token=%s", url, accessToken)
+}
+
+// postUser 提交修改用户请求
+// 未测试
+func postUser(url, accessToken, action string, data interface{}) error {
+	if accessToken == "" {
+		return errcode.ErrInvalidAccessToken
+	}
+	switch action {
+	case "create", "update":
+		user, ok := data.(*User)
+		if !ok {
+			return errors.New("创建及更新用户操作的数据类型必须是User")
+		}
+		if err := user.Validate(); err != nil {
+			return err
+		}
+		if action == "create" {
+			url = NewCreateUserURL(url, accessToken)
+		} else {
+			url = NewUpdateUserURL(url, accessToken)
+		}
+	case "batchdelete":
+		userids, ok := data.([]string)
+		if !ok {
+			return errors.New("批量删除用户操作的数据类型必须是用户id数组")
+		}
+		userids = RemoveDuplicateString(userids)
+		if len(userids) < 1 {
+			return nil
+		} else if len(userids) > maxBatchDeleteUserCount {
+			return fmt.Errorf("批量删除用户数量上限为%d", maxBatchDeleteUserCount)
+		}
+		for _, userid := range userids {
+			if userid == "" {
+				return errors.New("用户id存在空字符串")
+			}
+		}
+		url = NewBatchDeleteUserURL(url, accessToken)
+	default:
+		return errors.New("不支持的操作")
+	}
+	b, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	buf := bytes.NewReader(b)
+	resp, err := httpClient.Post(url, mimeApplicationJSONCharsetUTF8, buf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	b, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var res Response
+	if err = json.Unmarshal(b, &res); err != nil {
+		return err
+	}
+	return res.Validate()
+}
+
+// CreateUser 创建用户
+// 未测试
+func CreateUser(url, accessToken string, user *User) error {
+	return postUser(url, accessToken, "create", user)
+}
+
+// UpdateUser 创建用户
+// 未测试
+func UpdateUser(url, accessToken string, user *User) error {
+	return postUser(url, accessToken, "update", user)
+}
+
+// DeleteUser 删除用户
+// 未测试
+func DeleteUser(url, accessToken, userid string) error {
+	userid = strings.Replace(userid, " ", "", -1)
+	if userid == "" {
+		return errors.New("成员UserID为空")
+	}
+	if accessToken == "" {
+		return errcode.ErrInvalidAccessToken
+	}
+	url = NewDeleteUserURL(url, accessToken, userid)
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var res Response
+	if err = json.Unmarshal(b, &res); err != nil {
+		return err
+	}
+	return res.Validate()
+}
+
+// BatchDeleteUser 批量删除用户
+// 未测试
+func BatchDeleteUser(url, accessToken string, userids []string) error {
+	return postUser(url, accessToken, "batchdelete", userids)
 }
