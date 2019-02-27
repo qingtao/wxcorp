@@ -849,7 +849,7 @@ func TestUser_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "14",
+			name: "15",
 			fields: fields{
 				Enable:           1,
 				Name:             "test",
@@ -886,6 +886,45 @@ func TestUser_Validate(t *testing.T) {
 				},
 			},
 			wantErr: true,
+		},
+		{
+			name: "16",
+			fields: fields{
+				Enable:           1,
+				Name:             "test",
+				Department:       []int{1, 2, 3},
+				IsLeaderInDept:   []int{1, 0, 0},
+				Order:            []int{0, 0, 0},
+				Gender:           "1",
+				Email:            "ab@c.com",
+				ExternalPosition: "资深数据专家",
+				ExtAttr: &ExtAttrs{
+					Attrs: []ExtAttr{
+						ExtAttr{
+							Type: 1,
+							Name: "test",
+							Web: ExtWeb{
+								Title: "a",
+								URL:   "http://www.example.com",
+							},
+						},
+					},
+				},
+				ExternalProfile: &ExternalProfile{
+					ExternalCoprName: "name",
+					ExternalAttr: []ExtAttr{
+						ExtAttr{
+							Type: 1,
+							Name: "test",
+							Web: ExtWeb{
+								Title: "test",
+								URL:   "http://www.example.com",
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

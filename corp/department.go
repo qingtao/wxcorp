@@ -49,7 +49,6 @@ func (a *Department) Validate(action string) error {
 		if len(a.Name) > 32 {
 			return errors.New("部门名称长度限制为1-32个字符")
 		}
-		fmt.Println(a.Name)
 		if reDeptInvalidName.MatchString(a.Name) {
 			return errors.Errorf(`部门名称不能包含%s`, deptInvalidName)
 		}
