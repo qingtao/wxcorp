@@ -350,3 +350,136 @@ func TestChangeDepartment(t *testing.T) {
 		})
 	}
 }
+
+func TestDepartment_Validate(t *testing.T) {
+	type fields struct {
+		ID       int
+		Name     string
+		ParentID int
+		Order    int
+	}
+	type args struct {
+		action string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "1",
+			fields: fields{
+				ID:       1,
+				Name:     "广州研发中心",
+				ParentID: 0,
+			},
+			wantErr: false,
+		},
+		{
+			name: "2",
+			fields: fields{
+				ID:       1,
+				Name:     "广州研发中心-广州研发中心",
+				ParentID: 0,
+			},
+			wantErr: true,
+		},
+		{
+			name: "3",
+			fields: fields{
+				ID:       1,
+				Name:     "广州研发中心",
+				ParentID: 1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "4",
+			fields: fields{
+				ID:       1,
+				Name:     "",
+				ParentID: 0,
+			},
+			args:    args{action: "create"},
+			wantErr: true,
+		},
+		{
+			name: "5",
+			fields: fields{
+				ID:       1,
+				Name:     "广州研发中心?:",
+				ParentID: 0,
+			},
+			args:    args{action: "create"},
+			wantErr: true,
+		},
+		{
+			name: "6",
+			fields: fields{
+				ID:       1 << 32,
+				Name:     "广州研发中心",
+				ParentID: 0,
+			},
+			args:    args{action: "create"},
+			wantErr: true,
+		},
+		{
+			name: "7",
+			fields: fields{
+				ID:       32,
+				Name:     "广州研发中心",
+				ParentID: 1 << 32,
+			},
+			args:    args{action: "create"},
+			wantErr: true,
+		},
+		{
+			name: "8",
+			fields: fields{
+				ID:       32,
+				Name:     "广州研发中心",
+				ParentID: 1,
+				Order:    1 << 32,
+			},
+			args:    args{action: "create"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &Department{
+				ID:       tt.fields.ID,
+				Name:     tt.fields.Name,
+				ParentID: tt.fields.ParentID,
+				Order:    tt.fields.Order,
+			}
+			if err := a.Validate(tt.args.action); (err != nil) != tt.wantErr {
+				t.Errorf("Department.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestChangeDepartmentResponse_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		res     *ChangeDepartmentResponse
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name:    "1",
+			res:     nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.res.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ChangeDepartmentResponse.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

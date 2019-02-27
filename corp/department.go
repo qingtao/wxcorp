@@ -33,7 +33,7 @@ type Department struct {
 }
 
 var (
-	deptInvalidName   = `\:?"<>/`
+	deptInvalidName   = `[\:?"<>'/]`
 	reDeptInvalidName = regexp.MustCompile(deptInvalidName)
 )
 
@@ -49,18 +49,22 @@ func (a *Department) Validate(action string) error {
 		if len(a.Name) > 32 {
 			return errors.New("部门名称长度限制为1-32个字符")
 		}
+		fmt.Println(a.Name)
 		if reDeptInvalidName.MatchString(a.Name) {
 			return errors.Errorf(`部门名称不能包含%s`, deptInvalidName)
 		}
 	}
-	if a.ParentID < 1 || a.ParentID > math.MaxUint32 {
+	if a.ParentID == a.ID {
+		return errors.New("部门ID和父部门ID相同")
+	}
+	if a.ParentID < 0 || a.ParentID > math.MaxUint32 {
 		return errors.New("父部门ID有效范围[1,2^32)")
 	}
 	if a.Order < 0 || a.Order > math.MaxUint32 {
 		return errors.New("部门的排序值有效范围是[0,2^32)")
 	}
 	if a.ID < 1 || a.ID > math.MaxUint32 {
-		return errors.New("部门ID指定时必须大于1,不指定时自动生成,有效范围[1,2^32")
+		return errors.New("部门ID指定时必须大于1,不指定时自动生成,有效范围[1,2^32)")
 	}
 	return nil
 }

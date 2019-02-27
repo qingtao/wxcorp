@@ -192,6 +192,11 @@ func (a User) Validate() error {
 	if deptLen != len(a.IsLeaderInDept) {
 		return errors.New("成员上级字段个数必须和department一致")
 	}
+	for _, isLeader := range a.IsLeaderInDept {
+		if isLeader != 0 && isLeader != 1 {
+			return errors.New("成员在所在的部门内是否为上级:1表示为上级,0表示非上级")
+		}
+	}
 	if deptLen != len(a.Order) {
 		return errors.New("成员排序值字段个数必须和department一致")
 	}
@@ -200,7 +205,7 @@ func (a User) Validate() error {
 			return errors.New("部门内的排序值有效范围为[0,2^32)")
 		}
 	}
-	if a.Gender != "0" && a.Gender != "1" && a.Gender != "2" {
+	if a.Gender != "" && a.Gender != "1" && a.Gender != "2" {
 		return errors.New("成员性别必须是1:男,2:女")
 	}
 	if a.Position != "" && len(a.Position) > 128 {
@@ -226,13 +231,17 @@ func (a User) Validate() error {
 			}
 		}
 	}
-	err := a.ExtAttr.Validate()
-	if err != nil {
-		return err
+	if a.ExtAttr != nil {
+		err := a.ExtAttr.Validate()
+		if err != nil {
+			return err
+		}
 	}
-	err = a.ExternalProfile.Validate()
-	if err != nil {
-		return err
+	if a.ExternalProfile != nil {
+		err := a.ExternalProfile.Validate()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

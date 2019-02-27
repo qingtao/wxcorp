@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -340,6 +341,618 @@ func TestGetUserList(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotRes, tt.wantRes) {
 				t.Errorf("GetUserList() = %v, want %v", gotRes, tt.wantRes)
+			}
+		})
+	}
+}
+
+func TestExtText_Validate(t *testing.T) {
+	type fields struct {
+		Value string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name:    "1",
+			fields:  fields{Value: ""},
+			wantErr: false,
+		},
+		{
+			name:    "2",
+			fields:  fields{Value: "1234567890123"},
+			wantErr: true,
+		},
+		{
+			name:    "2",
+			fields:  fields{Value: "Hello, 中国"},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := ExtText{
+				Value: tt.fields.Value,
+			}
+			if err := a.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ExtText.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestExtWeb_Validate(t *testing.T) {
+	type fields struct {
+		Title string
+		URL   string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "1",
+			fields: fields{
+				Title: "",
+				URL:   "",
+			},
+			wantErr: false,
+		},
+		{
+			name: "2",
+			fields: fields{
+				Title: "test",
+				URL:   "",
+			},
+			wantErr: true,
+		},
+		{
+			name: "3",
+			fields: fields{
+				Title: "",
+				URL:   "http://www.a.com",
+			},
+			wantErr: true,
+		},
+		{
+			name: "4",
+			fields: fields{
+				Title: "test",
+				URL:   "http://www.a.com",
+			},
+			wantErr: false,
+		},
+		{
+			name: "5",
+			fields: fields{
+				Title: "testTestTestTest", //4xtest
+				URL:   "http://www.a.com",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := ExtWeb{
+				Title: tt.fields.Title,
+				URL:   tt.fields.URL,
+			}
+			if err := a.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ExtWeb.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestExtMiniprogram_Validate(t *testing.T) {
+	type fields struct {
+		Title    string
+		AppID    string
+		PagePath string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "1",
+			fields: fields{
+				Title:    "",
+				AppID:    "",
+				PagePath: "http://www.a.com",
+			},
+			wantErr: false,
+		},
+		{
+			name: "2",
+			fields: fields{
+				Title:    "test",
+				AppID:    "",
+				PagePath: "http://www.a.com",
+			},
+			wantErr: true,
+		},
+		{
+			name: "3",
+			fields: fields{
+				Title:    "",
+				AppID:    "wx8bd80126147daa",
+				PagePath: "http://www.a.com",
+			},
+			wantErr: true,
+		},
+		{
+			name: "4",
+			fields: fields{
+				Title:    "test",
+				AppID:    "wx8bd80126147daa",
+				PagePath: "http://www.a.com",
+			},
+			wantErr: false,
+		},
+		{
+			name: "5",
+			fields: fields{
+				Title:    "testTestTestTest", //4xtest
+				AppID:    "wx8bd80126147daa",
+				PagePath: "http://www.a.com",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := ExtMiniprogram{
+				Title:    tt.fields.Title,
+				AppID:    tt.fields.AppID,
+				PagePath: tt.fields.PagePath,
+			}
+			if err := a.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ExtMiniprogram.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestExtAttrs_Validate(t *testing.T) {
+	type fields struct {
+		Attrs []ExtAttr
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "0",
+			fields: fields{
+				Attrs: []ExtAttr{
+					ExtAttr{
+						Type: 0,
+						Name: "test",
+						Text: ExtText{
+							Value: "hello,世界!",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "1",
+			fields: fields{
+				Attrs: []ExtAttr{
+					ExtAttr{
+						Type: 1,
+						Name: "test",
+						Web: ExtWeb{
+							Title: "Test",
+							URL:   "",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "2",
+			fields: fields{
+				Attrs: []ExtAttr{
+					ExtAttr{
+						Type: 2,
+						Name: "test",
+						Miniprogram: ExtMiniprogram{
+							Title:    "test",
+							AppID:    "",
+							PagePath: "",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "3",
+			fields: fields{
+				Attrs: []ExtAttr{
+					ExtAttr{
+						Type: 3,
+						Name: "test",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &ExtAttrs{
+				Attrs: tt.fields.Attrs,
+			}
+			if err := a.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ExtAttrs.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestUser_Validate(t *testing.T) {
+	type fields struct {
+		UserID           string
+		NewUserID        string
+		Name             string
+		Department       []int
+		Order            []int
+		IsLeaderInDept   []int
+		Position         string
+		Mobile           string
+		Gender           string
+		Enable           int
+		Email            string
+		Avatar           string
+		AvatarMediaID    string
+		Telephone        string
+		Alias            string
+		Status           int
+		ExtAttr          *ExtAttrs
+		ToInvite         bool
+		ExternalPosition string
+		ExternalProfile  *ExternalProfile
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "1",
+			fields: fields{
+				Enable: -1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "2",
+			fields: fields{
+				Enable: 1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "3",
+			fields: fields{
+				Enable: 1,
+				Name:   strings.Repeat("成员名称长度为1~64个utf8字符", 4),
+			},
+			wantErr: true,
+		},
+		{
+			name: "4",
+			fields: fields{
+				Enable:     1,
+				Name:       "test",
+				Department: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21},
+			},
+			wantErr: true,
+		},
+		{
+			name: "5",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1},
+			},
+			wantErr: true,
+		},
+		{
+			name: "6",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1},
+			},
+			wantErr: true,
+		},
+		{
+			name: "7",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{1000},
+			},
+			wantErr: true,
+		},
+		{
+			name: "7-1",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 2},
+				Order:          []int{1000},
+			},
+			wantErr: true,
+		},
+		{
+			name: "8",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{1 << 32, 0, 0},
+			},
+			wantErr: true,
+		},
+		{
+			name: "9",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{0, 0, 0},
+				Gender:         "3",
+			},
+			wantErr: true,
+		},
+		{
+			name: "10",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{0, 0, 0},
+				Gender:         "1",
+				Position:       strings.Repeat("12345678", 17),
+			},
+			wantErr: true,
+		},
+		{
+			name: "11",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{0, 0, 0},
+				Gender:         "1",
+				Email:          "www",
+			},
+			wantErr: true,
+		},
+		{
+			name: "11-1",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{0, 0, 0},
+				Gender:         "1",
+				Email:          "@www",
+			},
+			wantErr: true,
+		},
+		{
+			name: "11-2",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{0, 0, 0},
+				Gender:         "1",
+				Email:          "www@",
+			},
+			wantErr: true,
+		},
+		{
+			name: "11-3",
+			fields: fields{
+				Enable:         1,
+				Name:           "test",
+				Department:     []int{1, 2, 3},
+				IsLeaderInDept: []int{1, 0, 0},
+				Order:          []int{0, 0, 0},
+				Gender:         "1",
+				Email:          strings.Repeat("ab@c.com", 9),
+			},
+			wantErr: true,
+		},
+		{
+			name: "12",
+			fields: fields{
+				Enable:           1,
+				Name:             "test",
+				Department:       []int{1, 2, 3},
+				IsLeaderInDept:   []int{1, 0, 0},
+				Order:            []int{0, 0, 0},
+				Gender:           "1",
+				Email:            "ab@c.com",
+				ExternalPosition: "1234567890123",
+			},
+			wantErr: true,
+		},
+		{
+			name: "13",
+			fields: fields{
+				Enable:           1,
+				Name:             "test",
+				Department:       []int{1, 2, 3},
+				IsLeaderInDept:   []int{1, 0, 0},
+				Order:            []int{0, 0, 0},
+				Gender:           "1",
+				Email:            "ab@c.com",
+				ExternalPosition: "中国abc",
+			},
+			wantErr: true,
+		},
+		{
+			name: "14",
+			fields: fields{
+				Enable:           1,
+				Name:             "test",
+				Department:       []int{1, 2, 3},
+				IsLeaderInDept:   []int{1, 0, 0},
+				Order:            []int{0, 0, 0},
+				Gender:           "1",
+				Email:            "ab@c.com",
+				ExternalPosition: "资深数据专家",
+				ExtAttr: &ExtAttrs{
+					Attrs: []ExtAttr{
+						ExtAttr{
+							Type: 1,
+							Name: "test",
+							Web: ExtWeb{
+								Title: "a",
+								URL:   "",
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "14",
+			fields: fields{
+				Enable:           1,
+				Name:             "test",
+				Department:       []int{1, 2, 3},
+				IsLeaderInDept:   []int{1, 0, 0},
+				Order:            []int{0, 0, 0},
+				Gender:           "1",
+				Email:            "ab@c.com",
+				ExternalPosition: "资深数据专家",
+				ExtAttr: &ExtAttrs{
+					Attrs: []ExtAttr{
+						ExtAttr{
+							Type: 1,
+							Name: "test",
+							Web: ExtWeb{
+								Title: "a",
+								URL:   "http://www.example.com",
+							},
+						},
+					},
+				},
+				ExternalProfile: &ExternalProfile{
+					ExternalCoprName: "name",
+					ExternalAttr: []ExtAttr{
+						ExtAttr{
+							Type: 1,
+							Name: "test",
+							Web: ExtWeb{
+								Title: "",
+								URL:   "http://www.example.com",
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := User{
+				UserID:           tt.fields.UserID,
+				NewUserID:        tt.fields.NewUserID,
+				Name:             tt.fields.Name,
+				Department:       tt.fields.Department,
+				Order:            tt.fields.Order,
+				IsLeaderInDept:   tt.fields.IsLeaderInDept,
+				Position:         tt.fields.Position,
+				Mobile:           tt.fields.Mobile,
+				Gender:           tt.fields.Gender,
+				Enable:           tt.fields.Enable,
+				Email:            tt.fields.Email,
+				Avatar:           tt.fields.Avatar,
+				AvatarMediaID:    tt.fields.AvatarMediaID,
+				Telephone:        tt.fields.Telephone,
+				Alias:            tt.fields.Alias,
+				Status:           tt.fields.Status,
+				ExtAttr:          tt.fields.ExtAttr,
+				ToInvite:         tt.fields.ToInvite,
+				ExternalPosition: tt.fields.ExternalPosition,
+				ExternalProfile:  tt.fields.ExternalProfile,
+			}
+			if err := a.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("User.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestExternalProfile_Validate(t *testing.T) {
+	type fields struct {
+		ExternalCoprName string
+		ExternalAttr     []ExtAttr
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "1",
+			fields: fields{
+				ExternalCoprName: "name",
+				ExternalAttr: []ExtAttr{
+					ExtAttr{
+						Type: 0,
+						Name: "extName",
+						Text: ExtText{Value: "hello"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := ExternalProfile{
+				ExternalCoprName: tt.fields.ExternalCoprName,
+				ExternalAttr:     tt.fields.ExternalAttr,
+			}
+			if err := a.Validate(); (err != nil) != tt.wantErr {
+				t.Errorf("ExternalProfile.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
