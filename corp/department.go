@@ -165,16 +165,8 @@ func postDepartment(url, accessToken, action string, dept *Department) (err erro
 	}
 	switch action {
 	case "create":
-		err = dept.Validate(action)
-		if err != nil {
-			return
-		}
 		url = NewCreateDepartmentURL(url, accessToken)
 	case "update":
-		err = dept.Validate(action)
-		if err != nil {
-			return
-		}
 		url = NewUpdateDepartmentURL(url, accessToken)
 	default:
 		return errors.New("不支持的操作")
@@ -206,12 +198,18 @@ func postDepartment(url, accessToken, action string, dept *Department) (err erro
 // CreateDepartment 创建部门
 // 未测试
 func CreateDepartment(url, accessToken string, dept *Department) error {
+	if err := dept.Validate("create"); err != nil {
+		return err
+	}
 	return postDepartment(url, accessToken, "create", dept)
 }
 
 // UpdateDepartment 更新部门
 // 未测试
 func UpdateDepartment(url, accessToken string, dept *Department) error {
+	if err := dept.Validate("update"); err != nil {
+		return err
+	}
 	return postDepartment(url, accessToken, "update", dept)
 }
 

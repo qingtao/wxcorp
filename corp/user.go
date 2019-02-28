@@ -24,6 +24,9 @@ const (
 	defaultDeleteUserURL      = "https://qyapi.weixin.qq.com/cgi-bin/user/delete"
 	defaultBatchDeleteUserURL = "https://qyapi.weixin.qq.com/cgi-bin/user/batchdelete"
 
+	defaultUserIDToOpenIDURL = "https://qyapi.weixin.qq.com/cgi-bin/user/convert_to_openid"
+	defaultOpenIDToUserIDURL = "https://qyapi.weixin.qq.com/cgi-bin/user/convert_to_userid"
+
 	maxBatchDeleteUserCount = 200 // 批量删除时，一次请求最多可以删除200个用户
 )
 
@@ -432,34 +435,22 @@ func postUser(url, accessToken, action string, data interface{}) error {
 	}
 	switch action {
 	case "create", "update":
-		user, ok := data.(*User)
+		_, ok := data.(*User)
 		if !ok {
 			return errors.New("创建及更新用户操作的数据类型必须是User")
 		}
-		if err := user.Validate(); err != nil {
-			return err
-		}
+
 		if action == "create" {
 			url = NewCreateUserURL(url, accessToken)
 		} else {
 			url = NewUpdateUserURL(url, accessToken)
 		}
 	case "batchdelete":
-		userids, ok := data.([]string)
+		_, ok := data.([]string)
 		if !ok {
 			return errors.New("批量删除用户操作的数据类型必须是用户id数组")
 		}
-		userids = RemoveDuplicateString(userids)
-		if len(userids) < 1 {
-			return nil
-		} else if len(userids) > maxBatchDeleteUserCount {
-			return fmt.Errorf("批量删除用户数量上限为%d", maxBatchDeleteUserCount)
-		}
-		for _, userid := range userids {
-			if userid == "" {
-				return errors.New("用户id存在空字符串")
-			}
-		}
+
 		url = NewBatchDeleteUserURL(url, accessToken)
 	default:
 		return errors.New("不支持的操作")
@@ -488,12 +479,18 @@ func postUser(url, accessToken, action string, data interface{}) error {
 // CreateUser 创建用户
 // 未测试
 func CreateUser(url, accessToken string, user *User) error {
+	if err := user.Validate(); err != nil {
+		return err
+	}
 	return postUser(url, accessToken, "create", user)
 }
 
 // UpdateUser 创建用户
 // 未测试
 func UpdateUser(url, accessToken string, user *User) error {
+	if err := user.Validate(); err != nil {
+		return err
+	}
 	return postUser(url, accessToken, "update", user)
 }
 
@@ -527,5 +524,118 @@ func DeleteUser(url, accessToken, userid string) error {
 // BatchDeleteUser 批量删除用户
 // 未测试
 func BatchDeleteUser(url, accessToken string, userids []string) error {
+	userids = RemoveDuplicateString(userids)
+	if len(userids) < 1 {
+		return nil
+	} else if len(userids) > maxBatchDeleteUserCount {
+		return fmt.Errorf("批量删除用户数量上限为%d", maxBatchDeleteUserCount)
+	}
+	for _, userid := range userids {
+		if userid == "" {
+			return errors.New("用户id存在空字符串")
+		}
+	}
 	return postUser(url, accessToken, "batchdelete", userids)
+}
+
+// SwitchOpenIDAndUserIDResponse userid和openid转换的响应
+type SwitchOpenIDAndUserIDResponse struct {
+	ErrCode int    `json:"errcode"`
+	ErrMsg  string `json:"errmsg"`
+	OpenID  string `json:"openid,omitempty"`
+	UserID  string `json:"userid,omitempty"`
+}
+
+// Validate 验证响应
+func (res *SwitchOpenIDAndUserIDResponse) Validate() error {
+	if res == nil {
+		return ErrIsNil
+	}
+	return errcode.Error(res.ErrCode)
+}
+
+// NewConverUserIDToOpenIDURL 新建userid转openid的URL
+// 未测试
+func NewConverUserIDToOpenIDURL(url, accessToken string) string {
+	if accessToken == "" {
+		return ""
+	}
+	if url == "" {
+		url = defaultUserIDToOpenIDURL
+	}
+	return fmt.Sprintf("%s?access_token=%s", url, accessToken)
+}
+
+// NewConverOpenIDToUserIDURL 新建openid转userid的URL
+// 未测试
+func NewConverOpenIDToUserIDURL(url, accessToken string) string {
+	if accessToken == "" {
+		return ""
+	}
+	if url == "" {
+		url = defaultOpenIDToUserIDURL
+	}
+	return fmt.Sprintf("%s?access_token=%s", url, accessToken)
+}
+
+// switchOpenIDAndUserID 交换openid和userid
+// 未测试
+func switchOpenIDAndUserID(url, accessToken, id string, typ int) (s string, err error) {
+	if accessToken == "" {
+		return "", errcode.ErrInvalidAccessToken
+	}
+	id = strings.Replace(id, " ", "", -1)
+
+	var buf bytes.Buffer
+	switch typ {
+	case 1: // userid to openid
+		url = NewConverUserIDToOpenIDURL(url, accessToken)
+		buf.WriteString(`{"userid":"` + id + `"}`)
+	case 2: // openid to userid
+		url = NewConverOpenIDToUserIDURL(url, accessToken)
+		buf.WriteString(`{"openid":"` + id + `"}`)
+	default:
+		return "", errors.New("无效的操作类型")
+	}
+
+	resp, err := httpClient.Post(url, mimeApplicationJSONCharsetUTF8, &buf)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var res SwitchOpenIDAndUserIDResponse
+	if err = json.Unmarshal(b, &res); err != nil {
+		return "", err
+	}
+	if err = res.Validate(); err != nil {
+		return "", err
+	}
+	if typ == 1 {
+		s = res.OpenID
+	} else {
+		s = res.UserID
+	}
+	return s, nil
+}
+
+// ConverUserIDToOpenID userid转openid
+// 未测试
+func ConverUserIDToOpenID(url, accessToken, userid string) (string, error) {
+	if userid == "" {
+		return "", errors.New("userid为空")
+	}
+	return switchOpenIDAndUserID(url, accessToken, userid, 1)
+}
+
+// ConverOpenIDToUserID openid转userid
+// 未测试
+func ConverOpenIDToUserID(url, accessToken, openid string) (string, error) {
+	if openid == "" {
+		return "", errors.New("openid为空")
+	}
+	return switchOpenIDAndUserID(url, accessToken, openid, 2)
 }
